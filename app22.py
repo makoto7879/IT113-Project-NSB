@@ -163,9 +163,15 @@ if uploaded_file:
     for col in X.columns:
         if col == "Gender_Numeric":
             user_input[col] = st.radio(
-                "Gender_Numeric (0 = Male, 1 = Female)", 
+                "Gender_Numeric (1 = Male, 0 = Female)", 
                 options=[1, 0], 
                 format_func=lambda x: "Male" if x == 1 else "Female"
+            )
+        elif col == "Weight_Category_Numeric":
+            user_input[col] = st.radio(
+                "Weight_Category_Numeric (0 = Normal Weight, 1 = Overweight, 2 = Obese)",
+                options=[0, 1, 2],
+                format_func=lambda x: {0: "Normal Weight", 1: "Overweight", 2: "Obese"}[x]
             )
         elif np.issubdtype(df[col].dtype, np.number):
             user_input[col] = st.number_input(
@@ -174,7 +180,7 @@ if uploaded_file:
             )
         else:
             user_input[col] = st.selectbox(f"{col}", sorted(df[col].unique()))
-
+            
     if st.button("Predict Sleep Disorder"):
         input_df = pd.DataFrame([user_input])
         # Ensure types match training data
