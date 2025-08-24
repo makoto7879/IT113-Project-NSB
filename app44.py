@@ -7,7 +7,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 import warnings
-warnings.filterWarnings('ignore')
+warnings.filterwarnings('ignore')
 
 # App title
 st.title("Sleep Disorder Prediction")
