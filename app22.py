@@ -117,8 +117,8 @@ if df is not None:
     })
     st.dataframe(model_comp.style.format("{:.4f}"))
 
-    best_val_model_name = max(model_results.keys(), key=lambda x: model_results[x]['val_acc'])
-    best_final_model = model_results[best_val_model_name]['model']
+    best_test_model_name = max(model_results.keys(), key=lambda x: model_results[x]['test_acc'])
+    best_final_model = model_results[best_test_model_name]['model']
     st.success(f"Best model based on validation accuracy: **{best_val_model_name}** (Validation Accuracy: {model_results[best_val_model_name]['val_acc']:.4f})")
 
     dt_classifier = best_final_model
