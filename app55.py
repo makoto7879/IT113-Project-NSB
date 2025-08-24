@@ -138,23 +138,10 @@ if df is not None:
             if not np.issubdtype(input_df[col].dtype, np.number):
                 input_df[col] = input_df[col].astype(X_original[col].dtype)
         
-        # Show what's being fed to the model for debugging
-        st.write("Debug - User input (original scale):")
-        st.write(pd.DataFrame([user_input]))
-        st.write("Debug - Transformed input (log scale, fed to model):")
-        st.write(input_df)
-        
         try:
             pred = dt_classifier.predict(input_df)[0]
             pred_label = le.inverse_transform([pred])[0]
             st.success(f"Predicted Sleep Disorder: {pred_label}")
-            
-            # Show prediction confidence/probability if available
-            if hasattr(dt_classifier, "predict_proba"):
-                proba = dt_classifier.predict_proba(input_df)[0]
-                st.write("Prediction probabilities:")
-                for i, class_name in enumerate(le.classes_):
-                    st.write(f"- {class_name}: {proba[i]:.2%}")
                     
         except Exception as e:
             st.error(f"Prediction error: {e}")
