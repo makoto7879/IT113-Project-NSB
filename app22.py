@@ -30,11 +30,6 @@ else:
         st.write("### Data Sample", df.head())
 
 if df is not None:
-    # ... rest of your app code that uses df
-    pass
-else:
-    st.info("Upload your cleaned_data_v2.csv file in the sidebar to begin.")
-
     target_col = 'Sleep Disorder'
     X = df.drop(target_col, axis=1)
     y = df[target_col]
@@ -192,19 +187,19 @@ else:
     for col in X.columns:
         if col == "Gender_Numeric":
             user_input[col] = st.radio(
-                "Gender", 
+                "Gender_Numeric (1 = Male, 0 = Female)", 
                 options=[1, 0], 
                 format_func=lambda x: "Male" if x == 1 else "Female"
             )
-        elif col == "BMI_category_numeric":
+        elif col == "Weight_Category_Numeric":
             user_input[col] = st.radio(
-                "BMI Category",
+                "Weight_Category_Numeric (0 = Normal Weight, 1 = Overweight, 2 = Obese)",
                 options=[0, 1, 2],
                 format_func=lambda x: {0: "Normal Weight", 1: "Overweight", 2: "Obese"}[x]
             )
         elif col == "Occupation_Numeric":
             user_input[col] = st.radio(
-                "Occupation",
+                "Occupation_Numeric",
                 options=list(occupation_options.keys()),
                 format_func=lambda x: occupation_options[x]
             )
@@ -215,7 +210,7 @@ else:
             )
         else:
             user_input[col] = st.selectbox(f"{col}", sorted(df[col].unique()))
-            
+
     if st.button("Predict Sleep Disorder"):
         input_df = pd.DataFrame([user_input])
         # Ensure types match training data
