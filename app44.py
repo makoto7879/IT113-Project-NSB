@@ -19,7 +19,6 @@ df = None
 
 if os.path.exists(csv_path):
     df = pd.read_csv(csv_path)
-    st.success(f"Loaded {csv_path} from repository!")
 else:
     st.error(f"File {csv_path} not found in repository. Please upload it manually.")
     uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
