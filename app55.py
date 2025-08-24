@@ -35,11 +35,8 @@ if df is not None:
     # Define categorical columns that should NOT be log-transformed
     categorical_cols = ['Gender_Numeric', 'BMI_category_numeric', 'Occupation_Numeric']
     
-    # Apply log transformation to training data (same as your original training)
-    X = X_original.copy()
-    for col in X.columns:
-        if col not in categorical_cols and np.issubdtype(X[col].dtype, np.number):
-            X[col] = np.log1p(X[col])  # Apply log transform to training data
+    # Your CSV is already log-transformed, so use it directly
+    X = X_original.copy()  # Data is already log-transformed, don't transform again
 
     # Encode target variable
     le = LabelEncoder()
@@ -116,12 +113,14 @@ if df is not None:
                 format_func=lambda x: occupation_options[x]
             )
         elif np.issubdtype(X_original[col].dtype, np.number):
-            # Use ORIGINAL data for min/max/mean (before log transform)
+            # Your CSV is already log-transformed, so convert back to original scale for user input
+            original_max = int(np.expm1(X_original[col].max()))  # Convert from log scale
+            original_mean = int(np.expm1(X_original[col].mean()))  # Convert from log scale
             user_input[col] = st.number_input(
                 f"{col}",
                 min_value=0,
-                max_value=int(X_original[col].max()),  # Use original data max
-                value=int(X_original[col].mean()),     # Use original data mean  
+                max_value=original_max,  # Now shows realistic numbers
+                value=original_mean,     # Now shows realistic numbers
                 step=1,
                 format="%d"
             )
@@ -132,15 +131,17 @@ if df is not None:
         # Create DataFrame with same column order as training
         input_df = pd.DataFrame([user_input])[X_original.columns]
         
-        # Apply the SAME log transformation as training data
+        # Transform user input to log scale (since model expects log-transformed data)
         for col in input_df.columns:
             if col not in categorical_cols and np.issubdtype(input_df[col].dtype, np.number):
-                input_df[col] = np.log1p(input_df[col])  # Apply log transform
+                input_df[col] = np.log1p(input_df[col])  # Transform user input to log scale
             if not np.issubdtype(input_df[col].dtype, np.number):
                 input_df[col] = input_df[col].astype(X_original[col].dtype)
         
         # Show what's being fed to the model for debugging
-        st.write("Debug - Transformed input features:")
+        st.write("Debug - User input (original scale):")
+        st.write(pd.DataFrame([user_input]))
+        st.write("Debug - Transformed input (log scale, fed to model):")
         st.write(input_df)
         
         try:
