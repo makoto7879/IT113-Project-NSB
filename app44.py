@@ -99,31 +99,6 @@ if df is not None:
 
     best_tuned_model = random_search.best_estimator_
 
-    # Option to hardcode Colab parameters (uncomment and set if known)
-    # best_tuned_model = DecisionTreeClassifier(
-    #     random_state=42,
-    #     max_depth=<your_colab_max_depth>,
-    #     min_samples_split=<your_colab_min_samples_split>,
-    #     min_samples_leaf=<your_colab_min_samples_leaf>,
-    #     criterion=<your_colab_criterion>,
-    #     max_features=<your_colab_max_features>,
-    #     splitter=<your_colab_splitter>,
-    #     min_impurity_decrease=<your_colab_min_impurity_decrease>,
-    #     ccp_alpha=<your_colab_ccp_alpha>
-    # )
-
-    # Alternative: Use GridSearchCV (uncomment to try)
-    # from sklearn.model_selection import GridSearchCV
-    # param_grid = {
-    #     'max_depth': [5, 7, 10, 15],
-    #     'min_samples_split': [2, 5, 10],
-    #     'min_samples_leaf': [1, 2, 4],
-    #     'criterion': ['gini', 'entropy']
-    # }
-    # grid_search = GridSearchCV(base_dt, param_grid, cv=5, scoring='accuracy', n_jobs=-1)
-    # grid_search.fit(X_train, y_train)
-    # best_tuned_model = grid_search.best_estimator_
-
     # Define models
     models = {
         'Initial Decision Tree': DecisionTreeClassifier(
@@ -169,7 +144,7 @@ if df is not None:
         tuned_test_acc = model_results['Tuned Decision Tree']['test_acc']
         st.write(f"- **Initial Decision Tree**: Test Accuracy = {initial_test_acc:.4f}")
         st.write(f"- **Tuned Decision Tree**: Test Accuracy = {tuned_test_acc:.4f}")
-        st.write(f"Difference (Tuned - Initial): {tuned_test_acc - initial_test_acc:.4f}")
+        
 
         # Diagnostic for test accuracies
         st.write("#### Diagnostic Check")
@@ -195,7 +170,7 @@ if df is not None:
     # Parameter comparison
     st.write("#### Parameter Comparison")
     st.write(f"Initial Decision Tree Parameters: max_depth=10, min_samples_split=5, min_samples_leaf=2, criterion='gini'")
-    st.write("Tuned Decision Tree Parameters (from Colab):")
+    st.write("Tuned Decision Tree Parameters :")
     st.write("- splitter: best")
     st.write("- min_samples_split: 30")
     st.write("- min_samples_leaf: 10")
@@ -204,21 +179,6 @@ if df is not None:
     st.write("- max_depth: 3")
     st.write("- criterion: entropy")
     st.write("- ccp_alpha: 0.01")
-
-    # Bar chart for test accuracy comparison
-    st.write("#### Test Accuracy Visualization")
-    fig, ax = plt.subplots(figsize=(8, 4))
-    models_names = ['Initial Decision Tree', 'Tuned Decision Tree']
-    test_accuracies = [initial_test_acc, tuned_test_acc]
-    bars = ax.bar(models_names, test_accuracies, color=['#1f77b4', '#ff7f0e'])
-    ax.set_title('Test Accuracy Comparison')
-    ax.set_ylabel('Accuracy')
-    ax.set_ylim(0, 1)
-    for bar in bars:
-        yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, f'{yval:.4f}', ha='center', va='bottom')
-    plt.tight_layout()
-    st.pyplot(fig)
 
     # Select the best model based on test accuracy
     best_test_model_name = max(model_results.keys(), key=lambda x: model_results[x]['test_acc'])
