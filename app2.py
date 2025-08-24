@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.preprocessing import LabelEncoder
@@ -11,10 +11,9 @@ from sklearn import tree
 import warnings
 warnings.filterwarnings('ignore')
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
-st.title("Sleep Disorder Decision Tree Analysis (Interactive Feature Selection)")
+st.title("Sleep Disorder Decision Tree Analysis (Interactive User Input)")
 
-st.sidebar.header("1. Upload your cleaned_data_v2.csv")
+st.sidebar.header("Upload cleaned_data_v2.csv")
 uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
 
 if uploaded_file:
@@ -22,27 +21,14 @@ if uploaded_file:
     st.write("### Data Sample", df.head())
 
     target_col = 'Sleep Disorder'
-    all_features = [col for col in df.columns if col != target_col]
-
-    st.sidebar.header("2. Select Features for Modeling")
-    selected_features = st.sidebar.multiselect(
-        "Choose input features for the model (minimum 2):",
-        options=all_features,
-        default=all_features
-    )
-
-    if len(selected_features) < 2:
-        st.warning("Please select at least two features.")
-        st.stop()
-
-    X = df[selected_features]
+    X = df.drop(target_col, axis=1)
     y = df[target_col]
 
     # Encode target variable
     le = LabelEncoder()
     y_encoded = le.fit_transform(y)
 
-    # Split the data into train, test, and validation sets
+    # Split the data
     X_train, X_temp, y_train, y_temp = train_test_split(
         X, y_encoded, test_size=0.4, random_state=42, stratify=y_encoded
     )
@@ -50,7 +36,7 @@ if uploaded_file:
         X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
     )
 
-    # HYPERPARAMETER TUNING WITH RANDOMIZED SEARCH
+    # Hyperparameter search
     st.subheader("Randomized Hyperparameter Search (Decision Tree)")
     param_dist = {
         'max_depth': [3, 5, 7, 10, 15, 20, 25, None],
@@ -63,9 +49,9 @@ if uploaded_file:
         'ccp_alpha': [0.0, 0.001, 0.005, 0.01, 0.02, 0.05, 0.1]
     }
 
-    st.write("Running RandomizedSearchCV (may take ~1 minute)...")
+    base_dt = DecisionTreeClassifier(random_state=42)
+    st.write("Running RandomizedSearchCV, please wait...")
     with st.spinner("Tuning hyperparameters..."):
-        base_dt = DecisionTreeClassifier(random_state=42)
         random_search = RandomizedSearchCV(
             base_dt,
             param_dist,
@@ -84,7 +70,6 @@ if uploaded_file:
 
     best_tuned_model = random_search.best_estimator_
 
-    # Models for comparison
     models = {
         'Initial Decision Tree': DecisionTreeClassifier(
             random_state=42, max_depth=10, min_samples_split=5,
@@ -94,7 +79,6 @@ if uploaded_file:
     }
 
     model_results = {}
-
     for name, model in models.items():
         model.fit(X_train, y_train)
         train_pred = model.predict(X_train)
@@ -113,7 +97,6 @@ if uploaded_file:
             'model': model
         }
 
-    # Model Comparison Table
     st.subheader("Model Comparison")
     model_comp = pd.DataFrame({
         "Train Accuracy": {k: v['train_acc'] for k, v in model_results.items()},
@@ -123,12 +106,10 @@ if uploaded_file:
     })
     st.dataframe(model_comp.style.format("{:.4f}"))
 
-    # Final Model Selection
     best_val_model_name = max(model_results.keys(), key=lambda x: model_results[x]['val_acc'])
     best_final_model = model_results[best_val_model_name]['model']
     st.success(f"Best model based on validation accuracy: **{best_val_model_name}** (Validation Accuracy: {model_results[best_val_model_name]['val_acc']:.4f})")
 
-    # Final Evaluation
     dt_classifier = best_final_model
     y_train_pred = dt_classifier.predict(X_train)
     y_test_pred = dt_classifier.predict(X_test)
@@ -149,26 +130,23 @@ if uploaded_file:
     cm_test = confusion_matrix(y_test, y_test_pred)
     cm_val = confusion_matrix(y_val, y_val_pred)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-
     sns.heatmap(cm_test, annot=True, fmt='d', cmap='Blues',
                 xticklabels=le.classes_, yticklabels=le.classes_, ax=ax1)
     ax1.set_title('Test Set')
     ax1.set_xlabel('Predicted')
     ax1.set_ylabel('Actual')
-
     sns.heatmap(cm_val, annot=True, fmt='d', cmap='Blues',
                 xticklabels=le.classes_, yticklabels=le.classes_, ax=ax2)
     ax2.set_title('Validation Set')
     ax2.set_xlabel('Predicted')
     ax2.set_ylabel('Actual')
-
     plt.tight_layout()
     st.pyplot(fig)
 
     st.subheader("Decision Tree Visualization (First 3 Levels)")
     fig2 = plt.figure(figsize=(20, 10))
     tree.plot_tree(dt_classifier,
-                   feature_names=selected_features,
+                   feature_names=X.columns,
                    class_names=le.classes_,
                    filled=True,
                    max_depth=3,
@@ -177,7 +155,31 @@ if uploaded_file:
     plt.tight_layout()
     st.pyplot(fig2)
 
-    st.info("You can change the selected features in the sidebar and rerun for different analysis!")
+    # Interactive User Input for Prediction
+    st.header("Predict Sleep Disorder for New User")
+    st.write("Input values for each feature below and click 'Predict Sleep Disorder'.")
+
+    user_input = {}
+    for col in X.columns:
+        if np.issubdtype(df[col].dtype, np.number):
+            user_input[col] = st.number_input(
+                f"{col}", 
+                float(df[col].min()), float(df[col].max()), float(df[col].mean())
+            )
+        else:
+            user_input[col] = st.selectbox(f"{col}", sorted(df[col].unique()))
+
+    if st.button("Predict Sleep Disorder"):
+        input_df = pd.DataFrame([user_input])
+        # Ensure types match training data
+        for col in input_df.columns:
+            if not np.issubdtype(input_df[col].dtype, np.number):
+                input_df[col] = input_df[col].astype(df[col].dtype)
+        try:
+            pred = dt_classifier.predict(input_df)[0]
+            st.success(f"Predicted Sleep Disorder: {le.inverse_transform([pred])[0]}")
+        except Exception as e:
+            st.error(f"Prediction error: {e}")
 
 else:
     st.info("Upload your cleaned_data_v2.csv file in the sidebar to begin.")
