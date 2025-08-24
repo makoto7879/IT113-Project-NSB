@@ -183,7 +183,7 @@ if uploaded_file:
             )
         elif col == "BMI_category_numeric":
             user_input[col] = st.radio(
-                "BMI_category_numeric (0 = Normal Weight, 1 = Overweight, 2 = Obese)",
+                "BMI_Category_numeric (Normal Weight, Overweight, Obese)",
                 options=[0, 1, 2],
                 format_func=lambda x: {0: "Normal Weight", 1: "Overweight", 2: "Obese"}[x]
             )
