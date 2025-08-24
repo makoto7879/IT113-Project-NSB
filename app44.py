@@ -7,7 +7,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterWarnings('ignore')
 
 # App title
 st.title("Sleep Disorder Prediction")
@@ -68,7 +68,6 @@ if df is not None:
 
     # Interactive user input for prediction
     st.header("Predict Sleep Disorder")
-    st.write("Input real-world integer values for numerical features below. Numerical inputs will be log-transformed (log(x + 1)) before prediction.")
 
     occupation_options = {
         0: "Software Engineer",
@@ -110,7 +109,7 @@ if df is not None:
         elif np.issubdtype(df[col].dtype, np.number):
             # Enforce integer input for numerical columns
             user_input[col] = st.number_input(
-                f"{col} (real-world integer value, will be log-transformed)",
+                f"{col}",
                 min_value=0,  # Ensure non-negative for log(x + 1)
                 max_value=int(np.expm1(df[col].max())),  # Inverse of log-transform, cast to int
                 value=int(np.expm1(df[col].mean())),  # Inverse of log-transform, cast to int
