@@ -112,7 +112,7 @@ if df is not None:
                 options=list(occupation_options.keys()),
                 format_func=lambda x: occupation_options[x]
             )
-        elif col == "Sleep_Duration" and np.issubdtype(X_original[col].dtype, np.number):
+        elif col == "Sleep Duration" and np.issubdtype(X_original[col].dtype, np.number):
             # Special handling for Sleep Duration - allow 1 decimal place
             original_max = float(np.expm1(X_original[col].max()))
             original_mean = float(np.expm1(X_original[col].mean()))
