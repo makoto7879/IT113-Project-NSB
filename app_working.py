@@ -65,7 +65,23 @@ if df is not None:
         # Log for debugging, not shown to user
         with open("debug_log.txt", "w") as f:
             f.write(f"Tuned model test accuracy: {test_acc:.4f}, expected ~0.9067\n")
+    # Add this right after training your model, before the user input section
+    st.write("=== DEBUG SECTION ===")
+    st.write("Testing model on first training example:")
 
+    # Take first row from training data
+    test_row = X_train.iloc[0:1]  
+    expected = y_train[0]
+    predicted = dt_classifier.predict(test_row)[0]
+
+    st.write(f"Expected: {expected} ({le.inverse_transform([expected])[0]})")
+    st.write(f"Predicted: {predicted} ({le.inverse_transform([predicted])[0]})")
+    st.write(f"Match: {expected == predicted}")
+
+    # Show the actual feature values
+    st.write("Training data features (log-transformed):")
+    st.write(test_row)
+    
     # Interactive user input for prediction
     st.header("Predict Sleep Disorder")
 
