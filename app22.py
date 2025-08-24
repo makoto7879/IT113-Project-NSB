@@ -159,7 +159,7 @@ if uploaded_file:
     st.header("Predict Sleep Disorder for New User")
     st.write("Input values for each feature below and click 'Predict Sleep Disorder'.")
 
-        occupation_options = {
+    occupation_options = {
         0: "Software Engineer",
         1: "Doctor",
         2: "Sales Representative",
