@@ -131,15 +131,23 @@ if df is not None:
         st.write(f"- **Tuned Decision Tree**: Test Accuracy = {tuned_test_acc:.4f}")
         st.write(f"Difference (Tuned - Initial): {tuned_test_acc - initial_test_acc:.4f}")
 
-        # Check for identical accuracies
+        # Diagnostic for test accuracies
+        st.write("#### Diagnostic Check")
+        st.write(f"Raw Initial Test Accuracy: {initial_test_acc}")
+        st.write(f"Raw Tuned Test Accuracy: {tuned_test_acc}")
         if abs(tuned_test_acc - initial_test_acc) < 1e-6:
             st.warning("The Initial and Tuned Decision Tree models have identical test accuracies. "
-                       "Possible reasons: similar hyperparameters, simple dataset, or limited RandomizedSearchCV iterations.")
+                       "Possible reasons: similar hyperparameters, dataset differences, or limited RandomizedSearchCV iterations.")
+        elif tuned_test_acc > initial_test_acc:
+            st.success("Tuned Decision Tree has higher test accuracy, as expected.")
+        else:
+            st.error("Unexpected: Initial Decision Tree has higher or equal test accuracy. Check parameters or data consistency with Colab.")
+
     except KeyError as e:
         st.error(f"Error accessing model results: {e}. Please ensure models are trained correctly.")
 
     # Display tuned model parameters for comparison
-    st.write("#### Tuned Model Parameters (for comparison with Initial)")
+    st.write("#### Parameter Comparison")
     st.write(f"Initial Decision Tree Parameters: max_depth=10, min_samples_split=5, min_samples_leaf=2, criterion='gini'")
     st.write(f"Tuned Decision Tree Parameters: {random_search.best_params_}")
 
@@ -207,7 +215,7 @@ if df is not None:
                    filled=True,
                    max_depth=3,
                    fontsize=10)
-    plt.title('Decision Tree Visualization (First 3 Levels)')
+    plt.title(f'Decision Tree Visualization (First 3 Levels) - {best_test_model_name}')
     plt.tight_layout()
     st.pyplot(fig2)
 
