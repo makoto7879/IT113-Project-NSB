@@ -98,7 +98,7 @@ if df is not None:
         train_acc = accuracy_score(y_train, train_pred)
         test_acc = accuracy_score(y_test, test_pred)
         val_acc = accuracy_score(y_val, val_pred)
-       
+
         model_results[name] = {
             'train_acc': train_acc,
             'test_acc': test_acc,
@@ -111,7 +111,7 @@ if df is not None:
     model_comp = pd.DataFrame({
         "Train Accuracy": {k: v['train_acc'] for k, v in model_results.items()},
         "Test Accuracy": {k: v['test_acc'] for k, v in model_results.items()},
-        "Validation Accuracy": {k: v['val_acc'] for k, v in model_results.items()},
+        "Validation Accuracy": {k: v['val_acc'] for k, v in model_results.items()}
     })
 
     # Display the comparison table with test accuracy highlighted
@@ -120,11 +120,40 @@ if df is not None:
 
     # Explicitly compare test accuracies
     st.write("#### Test Accuracy Comparison")
-    initial_test_acc = model_results['Initial Decision Tree']['test_acc']
-    tuned_test_acc = model_results['Tuned Decision Tree']['test_acc']
-    st.write(f"- **Initial Decision Tree**: Test Accuracy = {initial_test_acc:.4f}")
-    st.write(f"- **Tuned Decision Tree**: Test Accuracy = {tuned_test_acc:.4f}")
-    st.write(f"Difference (Tuned - Initial): {tuned_test_acc - initial_test_acc:.4f}")
+    try:
+        initial_test_acc = model_results['Initial Decision Tree']['test_acc']
+        tuned_test_acc = model_results['Tuned Decision Tree']['test_acc']
+        st.write(f"- **Initial Decision Tree**: Test Accuracy = {initial_test_acc:.4f}")
+        st.write(f"- **Tuned Decision Tree**: Test Accuracy = {tuned_test_acc:.4f}")
+        st.write(f"Difference (Tuned - Initial): {tuned_test_acc - initial_test_acc:.4f}")
+
+        # Check for identical accuracies
+        if abs(tuned_test_acc - initial_test_acc) < 1e-6:
+            st.warning("The Initial and Tuned Decision Tree models have identical test accuracies. "
+                       "Possible reasons: similar hyperparameters, simple dataset, or limited RandomizedSearchCV iterations.")
+    except KeyError as e:
+        st.error(f"Error accessing model results: {e}. Please ensure models are trained correctly.")
+
+    # Display tuned model parameters for comparison
+    st.write("#### Tuned Model Parameters (for comparison with Initial)")
+    st.write(f"Initial Decision Tree Parameters: max_depth=10, min_samples_split=5, min_samples_leaf=2, criterion='gini'")
+    st.write(f"Tuned Decision Tree Parameters: {random_search.best_params_}")
+
+    # Bar chart for test accuracy comparison
+    st.write("#### Test Accuracy Visualization")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    models_names = ['Initial Decision Tree', 'Tuned Decision Tree']
+    test_accuracies = [initial_test_acc, tuned_test_acc]
+    bars = ax.bar(models_names, test_accuracies, color=['#1f77b4', '#ff7f0e'])
+    ax.set_title('Test Accuracy Comparison')
+    ax.set_ylabel('Accuracy')
+    ax.set_ylim(0, 1)
+    # Add value labels on top of bars
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, f'{yval:.4f}', ha='center', va='bottom')
+    plt.tight_layout()
+    st.pyplot(fig)
 
     # Select the best model based on test accuracy
     best_test_model_name = max(model_results.keys(), key=lambda x: model_results[x]['test_acc'])
