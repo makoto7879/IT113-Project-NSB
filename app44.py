@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.preprocessing import LabelEncoder
@@ -63,49 +63,40 @@ if df is not None:
     st.write(f"Test Set Size: {X_test.shape}")
     st.write(f"Validation Set Size: {X_val.shape}")
     st.write("Class Distribution in Training Set:")
-    st.write(pd.Series(y_train).value_counts(normalize=True))
-
-    # Hyperparameter search
-    st.subheader("Randomized Hyperparameter Search (Decision Tree)")
-    param_dist = {
-        'max_depth': [3, 5, 7, 10, 15, 20, 25, None],
-        'min_samples_split': [2, 5, 10, 15, 20, 25, 30],
-        'min_samples_leaf': [1, 2, 4, 6, 8, 10, 12],
-        'criterion': ['gini', 'entropy'],
-        'max_features': ['sqrt', 'log2', None, 0.3, 0.5, 0.7, 0.9],
-        'splitter': ['best', 'random'],
-        'min_impurity_decrease': [0.0, 0.001, 0.005, 0.01, 0.02, 0.05, 0.1],
-        'ccp_alpha': [0.0, 0.001, 0.005, 0.01, 0.02, 0.05, 0.1]
-    }
-
-    base_dt = DecisionTreeClassifier(random_state=42)
-    st.write("Running RandomizedSearchCV, please wait...")
-    with st.spinner("Tuning hyperparameters..."):
-        random_search = RandomizedSearchCV(
-            base_dt,
-            param_dist,
-            n_iter=100,  # Increased from 50
-            cv=5,
-            scoring='accuracy',
-            n_jobs=-1,
-            random_state=42,
-            verbose=0
-        )
-        random_search.fit(X_train, y_train)
-
-    st.write("#### Best Hyperparameters Found:")
-    for param, value in random_search.best_params_.items():
-        st.write(f"- **{param}**: {value}")
-
-    best_tuned_model = random_search.best_estimator_
+    st.write(pd.Series(le.inverse_transform(y_train)).value_counts(normalize=True))
 
     # Define models
+    st.subheader("Model Definitions")
+    initial_model = DecisionTreeClassifier(
+        random_state=42, max_depth=10, min_samples_split=5,
+        min_samples_leaf=2, criterion='gini'
+    )
+    # Hardcode Tuned Decision Tree parameters from Colab
+    tuned_model = DecisionTreeClassifier(
+        random_state=42,
+        splitter='best',
+        min_samples_split=30,
+        min_samples_leaf=10,
+        min_impurity_decrease=0.001,
+        max_features=0.5,
+        max_depth=3,
+        criterion='entropy',
+        ccp_alpha=0.01
+    )
+
+    st.write("#### Tuned Decision Tree Parameters:")
+    st.write("- splitter: best")
+    st.write("- min_samples_split: 30")
+    st.write("- min_samples_leaf: 10")
+    st.write("- min_impurity_decrease: 0.001")
+    st.write("- max_features: 0.5")
+    st.write("- max_depth: 3")
+    st.write("- criterion: entropy")
+    st.write("- ccp_alpha: 0.01")
+
     models = {
-        'Initial Decision Tree': DecisionTreeClassifier(
-            random_state=42, max_depth=10, min_samples_split=5,
-            min_samples_leaf=2, criterion='gini'
-        ),
-        'Tuned Decision Tree': best_tuned_model
+        'Initial Decision Tree': initial_model,
+        'Tuned Decision Tree': tuned_model
     }
 
     # Train and evaluate models
@@ -144,7 +135,7 @@ if df is not None:
         tuned_test_acc = model_results['Tuned Decision Tree']['test_acc']
         st.write(f"- **Initial Decision Tree**: Test Accuracy = {initial_test_acc:.4f}")
         st.write(f"- **Tuned Decision Tree**: Test Accuracy = {tuned_test_acc:.4f}")
-        
+        st.write(f"Difference (Tuned - Initial): {tuned_test_acc - initial_test_acc:.4f}")
 
         # Diagnostic for test accuracies
         st.write("#### Diagnostic Check")
@@ -170,7 +161,7 @@ if df is not None:
     # Parameter comparison
     st.write("#### Parameter Comparison")
     st.write(f"Initial Decision Tree Parameters: max_depth=10, min_samples_split=5, min_samples_leaf=2, criterion='gini'")
-    st.write("Tuned Decision Tree Parameters :")
+    st.write("Tuned Decision Tree Parameters (from Colab):")
     st.write("- splitter: best")
     st.write("- min_samples_split: 30")
     st.write("- min_samples_leaf: 10")
@@ -179,7 +170,7 @@ if df is not None:
     st.write("- max_depth: 3")
     st.write("- criterion: entropy")
     st.write("- ccp_alpha: 0.01")
-
+    
     # Select the best model based on test accuracy
     best_test_model_name = max(model_results.keys(), key=lambda x: model_results[x]['test_acc'])
     best_final_model = model_results[best_test_model_name]['model']
@@ -194,8 +185,7 @@ if df is not None:
     st.subheader("Performance Metrics")
     st.write(f"**Training Accuracy:** {accuracy_score(y_train, y_train_pred):.4f}")
     st.write(f"**Test Accuracy:** {accuracy_score(y_test, y_test_pred):.4f}")
-    st.write(f"**Validation Accuracy:** {accuracy_score(y_val, y_val_pred):.4f}")
-
+   
     st.markdown("**Classification Report (Test Set):**")
     st.text(classification_report(y_test, y_test_pred, target_names=le.classes_))
 
@@ -235,7 +225,7 @@ if df is not None:
 
     # Interactive user input for prediction
     st.header("Predict Sleep Disorder for New User")
-    st.write("Input real-world values for each feature below. Numerical inputs will be log-transformed (log(x + 1)) before prediction.")
+    st.write("Input real-world integer values for numerical features below. Numerical inputs will be log-transformed (log(x + 1)) before prediction.")
 
     occupation_options = {
         0: "Software Engineer",
@@ -275,12 +265,14 @@ if df is not None:
                 format_func=lambda x: occupation_options[x]
             )
         elif np.issubdtype(df[col].dtype, np.number):
-            # Allow non-negative input for numerical columns to be log-transformed
+            # Enforce integer input for numerical columns
             user_input[col] = st.number_input(
-                f"{col} (real-world value, will be log-transformed)",
-                min_value=0.0,  # Ensure non-negative for log(x + 1)
-                max_value=float(df[col].apply(np.expm1).max()),  # Inverse of log-transform for max
-                value=float(df[col].apply(np.expm1).mean())  # Inverse for mean
+                f"{col} (real-world integer value, will be log-transformed)",
+                min_value=0,  # Ensure non-negative for log(x + 1)
+                max_value=int(np.expm1(df[col].max())),  # Inverse of log-transform, cast to int
+                value=int(np.expm1(df[col].mean())),  # Inverse of log-transform, cast to int
+                step=1,  # Enforce whole numbers
+                format="%d"  # Display as integer, no decimals
             )
         else:
             user_input[col] = st.selectbox(f"{col}", sorted(df[col].unique()))
