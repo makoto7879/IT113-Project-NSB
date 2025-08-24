@@ -89,8 +89,8 @@ if df is not None:
     # Define categorical columns that are not log-transformed
     categorical_cols = ['Gender_Numeric', 'BMI_category_numeric', 'Occupation_Numeric']
 
-   user_input = {}
-   for col in X_original.columns:  # Use original column order
+    user_input = {}
+    for col in X_original.columns:  # Use original column order
         if col == "Gender_Numeric":
             user_input[col] = st.radio(
                 "Gender", 
