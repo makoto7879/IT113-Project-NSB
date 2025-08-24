@@ -84,7 +84,7 @@ if df is not None:
         ccp_alpha=0.01
     )
 
-    st.write("#### Tuned Decision Tree Parameters:")
+    st.write("#### Tuned Decision Tree Parameters (Hardcoded from Colab):")
     st.write("- splitter: best")
     st.write("- min_samples_split: 30")
     st.write("- min_samples_leaf: 10")
@@ -170,7 +170,22 @@ if df is not None:
     st.write("- max_depth: 3")
     st.write("- criterion: entropy")
     st.write("- ccp_alpha: 0.01")
-    
+
+    # Bar chart for test accuracy comparison
+    st.write("#### Test Accuracy Visualization")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    models_names = ['Initial Decision Tree', 'Tuned Decision Tree']
+    test_accuracies = [initial_test_acc, tuned_test_acc]
+    bars = ax.bar(models_names, test_accuracies, color=['#1f77b4', '#ff7f0e'])
+    ax.set_title('Test Accuracy Comparison')
+    ax.set_ylabel('Accuracy')
+    ax.set_ylim(0, 1)
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, f'{yval:.4f}', ha='center', va='bottom')
+    plt.tight_layout()
+    st.pyplot(fig)
+
     # Select the best model based on test accuracy
     best_test_model_name = max(model_results.keys(), key=lambda x: model_results[x]['test_acc'])
     best_final_model = model_results[best_test_model_name]['model']
@@ -185,7 +200,8 @@ if df is not None:
     st.subheader("Performance Metrics")
     st.write(f"**Training Accuracy:** {accuracy_score(y_train, y_train_pred):.4f}")
     st.write(f"**Test Accuracy:** {accuracy_score(y_test, y_test_pred):.4f}")
-   
+    st.write(f"**Validation Accuracy:** {accuracy_score(y_val, y_val_pred):.4f}")
+
     st.markdown("**Classification Report (Test Set):**")
     st.text(classification_report(y_test, y_test_pred, target_names=le.classes_))
 
