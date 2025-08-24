@@ -112,6 +112,18 @@ if df is not None:
                 options=list(occupation_options.keys()),
                 format_func=lambda x: occupation_options[x]
             )
+        elif col == "Sleep_Duration" and np.issubdtype(X_original[col].dtype, np.number):
+            # Special handling for Sleep Duration - allow 1 decimal place
+            original_max = float(np.expm1(X_original[col].max()))
+            original_mean = float(np.expm1(X_original[col].mean()))
+            user_input[col] = st.number_input(
+                f"{col}",
+                min_value=0.0,
+                max_value=original_max,
+                value=original_mean,
+                step=0.1,  # Allow 0.1 increments
+                format="%.1f"  # Show 1 decimal place
+            )
         elif np.issubdtype(X_original[col].dtype, np.number):
             # Your CSV is already log-transformed, so convert back to original scale for user input
             original_max = int(np.expm1(X_original[col].max()))  # Convert from log scale
