@@ -177,19 +177,19 @@ if uploaded_file:
     for col in X.columns:
         if col == "Gender_Numeric":
             user_input[col] = st.radio(
-                "Gender_Numeric (1 = Male, 0 = Female)", 
+                "Gender", 
                 options=[1, 0], 
                 format_func=lambda x: "Male" if x == 1 else "Female"
             )
         elif col == "BMI_category_numeric":
             user_input[col] = st.radio(
-                "BMI_Category_numeric (Normal Weight, Overweight, Obese)",
+                "BMI Category",
                 options=[0, 1, 2],
                 format_func=lambda x: {0: "Normal Weight", 1: "Overweight", 2: "Obese"}[x]
             )
         elif col == "Occupation_Numeric":
             user_input[col] = st.radio(
-                "Occupation_Numeric",
+                "Occupation",
                 options=list(occupation_options.keys()),
                 format_func=lambda x: occupation_options[x]
             )
