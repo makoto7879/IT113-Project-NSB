@@ -177,21 +177,33 @@ if df is not None:
         st.write(f"Raw Tuned Test Accuracy: {tuned_test_acc}")
         if abs(tuned_test_acc - initial_test_acc) < 1e-6:
             st.warning("The Initial and Tuned Decision Tree models have identical test accuracies. "
-                       "Possible reasons: hyperparameters not optimal, dataset differences, or limited search. "
-                       "Expected Tuned Test Accuracy ~0.9067 from Colab.")
+                       "This is unexpected since Colab shows Tuned Test Accuracy ~0.9067. "
+                       "Possible reasons: dataset differences, preprocessing issues, or split inconsistencies.")
         elif tuned_test_acc > initial_test_acc and abs(tuned_test_acc - 0.9067) < 0.01:
             st.success("Tuned Decision Tree has higher test accuracy (~0.9067), matching Colab results.")
+            if abs(model_results['Tuned Decision Tree']['train_acc'] - 0.8884) > 0.01 or \
+               abs(model_results['Tuned Decision Tree']['val_acc'] - 0.9333) > 0.01:
+                st.warning("Tuned model test accuracy matches Colab, but training or validation accuracies differ. "
+                           "Check dataset or preprocessing.")
         else:
             st.error("Unexpected: Tuned Decision Tree test accuracy does not match Colab (0.9067). "
-                     "Check parameters, dataset, or preprocessing.")
+                     "Check dataset consistency, preprocessing, or library versions.")
 
     except KeyError as e:
         st.error(f"Error accessing model results: {e}. Please ensure models are trained correctly.")
 
-    # Display tuned model parameters for comparison
+    # Parameter comparison
     st.write("#### Parameter Comparison")
     st.write(f"Initial Decision Tree Parameters: max_depth=10, min_samples_split=5, min_samples_leaf=2, criterion='gini'")
-    st.write(f"Tuned Decision Tree Parameters: {random_search.best_params_}")
+    st.write("Tuned Decision Tree Parameters (from Colab):")
+    st.write("- splitter: best")
+    st.write("- min_samples_split: 30")
+    st.write("- min_samples_leaf: 10")
+    st.write("- min_impurity_decrease: 0.001")
+    st.write("- max_features: 0.5")
+    st.write("- max_depth: 3")
+    st.write("- criterion: entropy")
+    st.write("- ccp_alpha: 0.01")
 
     # Bar chart for test accuracy comparison
     st.write("#### Test Accuracy Visualization")
@@ -263,7 +275,7 @@ if df is not None:
 
     # Interactive user input for prediction
     st.header("Predict Sleep Disorder for New User")
-    st.write("Input values for each feature below and click 'Predict Sleep Disorder'.")
+    st.write("Input real-world values for each feature below. Numerical inputs will be log-transformed (log(x + 1)) before prediction.")
 
     occupation_options = {
         0: "Software Engineer",
@@ -278,6 +290,9 @@ if df is not None:
         9: "Salesperson",
         10: "Manager"
     }
+
+    # Define categorical columns that are not log-transformed
+    categorical_cols = ['Gender_Numeric', 'BMI_category_numeric', 'Occupation_Numeric']
 
     user_input = {}
     for col in X.columns:
@@ -300,17 +315,22 @@ if df is not None:
                 format_func=lambda x: occupation_options[x]
             )
         elif np.issubdtype(df[col].dtype, np.number):
+            # Allow non-negative input for numerical columns to be log-transformed
             user_input[col] = st.number_input(
-                f"{col}", 
-                float(df[col].min()), float(df[col].max()), float(df[col].mean())
+                f"{col} (real-world value, will be log-transformed)",
+                min_value=0.0,  # Ensure non-negative for log(x + 1)
+                max_value=float(df[col].apply(np.expm1).max()),  # Inverse of log-transform for max
+                value=float(df[col].apply(np.expm1).mean())  # Inverse for mean
             )
         else:
             user_input[col] = st.selectbox(f"{col}", sorted(df[col].unique()))
 
     if st.button("Predict Sleep Disorder"):
         input_df = pd.DataFrame([user_input])
-        # Ensure types match training data
+        # Apply log transformation to numerical columns
         for col in input_df.columns:
+            if col not in categorical_cols and np.issubdtype(input_df[col].dtype, np.number):
+                input_df[col] = np.log1p(input_df[col])  # log(x + 1) transformation
             if not np.issubdtype(input_df[col].dtype, np.number):
                 input_df[col] = input_df[col].astype(df[col].dtype)
         try:
