@@ -34,6 +34,13 @@ else:
 
 # Data processing and model training
 if df is not None:
+    # Dataset diagnostics
+    st.write("#### Dataset Information")
+    st.write(f"Dataset Size: {df.shape}")
+    st.write(f"Features: {list(df.columns)}")
+    st.write("Class Distribution in Target ('Sleep Disorder'):")
+    st.write(pd.Series(df['Sleep Disorder']).value_counts(normalize=True))
+
     target_col = 'Sleep Disorder'
     X = df.drop(target_col, axis=1)
     y = df[target_col]
@@ -49,6 +56,14 @@ if df is not None:
     X_test, X_val, y_test, y_val = train_test_split(
         X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
     )
+
+    # Data split diagnostics
+    st.write("#### Data Split Information")
+    st.write(f"Training Set Size: {X_train.shape}")
+    st.write(f"Test Set Size: {X_test.shape}")
+    st.write(f"Validation Set Size: {X_val.shape}")
+    st.write("Class Distribution in Training Set:")
+    st.write(pd.Series(y_train).value_counts(normalize=True))
 
     # Hyperparameter search
     st.subheader("Randomized Hyperparameter Search (Decision Tree)")
@@ -69,7 +84,7 @@ if df is not None:
         random_search = RandomizedSearchCV(
             base_dt,
             param_dist,
-            n_iter=50,
+            n_iter=100,  # Increased from 50
             cv=5,
             scoring='accuracy',
             n_jobs=-1,
@@ -83,6 +98,31 @@ if df is not None:
         st.write(f"- **{param}**: {value}")
 
     best_tuned_model = random_search.best_estimator_
+
+    # Option to hardcode Colab parameters (uncomment and set if known)
+    # best_tuned_model = DecisionTreeClassifier(
+    #     random_state=42,
+    #     max_depth=<your_colab_max_depth>,
+    #     min_samples_split=<your_colab_min_samples_split>,
+    #     min_samples_leaf=<your_colab_min_samples_leaf>,
+    #     criterion=<your_colab_criterion>,
+    #     max_features=<your_colab_max_features>,
+    #     splitter=<your_colab_splitter>,
+    #     min_impurity_decrease=<your_colab_min_impurity_decrease>,
+    #     ccp_alpha=<your_colab_ccp_alpha>
+    # )
+
+    # Alternative: Use GridSearchCV (uncomment to try)
+    # from sklearn.model_selection import GridSearchCV
+    # param_grid = {
+    #     'max_depth': [5, 7, 10, 15],
+    #     'min_samples_split': [2, 5, 10],
+    #     'min_samples_leaf': [1, 2, 4],
+    #     'criterion': ['gini', 'entropy']
+    # }
+    # grid_search = GridSearchCV(base_dt, param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+    # grid_search.fit(X_train, y_train)
+    # best_tuned_model = grid_search.best_estimator_
 
     # Define models
     models = {
@@ -137,11 +177,13 @@ if df is not None:
         st.write(f"Raw Tuned Test Accuracy: {tuned_test_acc}")
         if abs(tuned_test_acc - initial_test_acc) < 1e-6:
             st.warning("The Initial and Tuned Decision Tree models have identical test accuracies. "
-                       "Possible reasons: similar hyperparameters, dataset differences, or limited RandomizedSearchCV iterations.")
-        elif tuned_test_acc > initial_test_acc:
-            st.success("Tuned Decision Tree has higher test accuracy, as expected.")
+                       "Possible reasons: hyperparameters not optimal, dataset differences, or limited search. "
+                       "Expected Tuned Test Accuracy ~0.9067 from Colab.")
+        elif tuned_test_acc > initial_test_acc and abs(tuned_test_acc - 0.9067) < 0.01:
+            st.success("Tuned Decision Tree has higher test accuracy (~0.9067), matching Colab results.")
         else:
-            st.error("Unexpected: Initial Decision Tree has higher or equal test accuracy. Check parameters or data consistency with Colab.")
+            st.error("Unexpected: Tuned Decision Tree test accuracy does not match Colab (0.9067). "
+                     "Check parameters, dataset, or preprocessing.")
 
     except KeyError as e:
         st.error(f"Error accessing model results: {e}. Please ensure models are trained correctly.")
