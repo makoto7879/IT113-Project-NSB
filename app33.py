@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.preprocessing import LabelEncoder
@@ -65,72 +65,38 @@ if df is not None:
     st.write("Class Distribution in Training Set:")
     st.write(pd.Series(y_train).value_counts(normalize=True))
 
-    # Hyperparameter search
-    st.subheader("Randomized Hyperparameter Search (Decision Tree)")
-    param_dist = {
-        'max_depth': [3, 5, 7, 10, 15, 20, 25, None],
-        'min_samples_split': [2, 5, 10, 15, 20, 25, 30],
-        'min_samples_leaf': [1, 2, 4, 6, 8, 10, 12],
-        'criterion': ['gini', 'entropy'],
-        'max_features': ['sqrt', 'log2', None, 0.3, 0.5, 0.7, 0.9],
-        'splitter': ['best', 'random'],
-        'min_impurity_decrease': [0.0, 0.001, 0.005, 0.01, 0.02, 0.05, 0.1],
-        'ccp_alpha': [0.0, 0.001, 0.005, 0.01, 0.02, 0.05, 0.1]
-    }
-
-    base_dt = DecisionTreeClassifier(random_state=42)
-    st.write("Running RandomizedSearchCV, please wait...")
-    with st.spinner("Tuning hyperparameters..."):
-        random_search = RandomizedSearchCV(
-            base_dt,
-            param_dist,
-            n_iter=100,  # Increased from 50
-            cv=5,
-            scoring='accuracy',
-            n_jobs=-1,
-            random_state=42,
-            verbose=0
-        )
-        random_search.fit(X_train, y_train)
-
-    st.write("#### Best Hyperparameters Found:")
-    for param, value in random_search.best_params_.items():
-        st.write(f"- **{param}**: {value}")
-
-    best_tuned_model = random_search.best_estimator_
-
-    # Option to hardcode Colab parameters (uncomment and set if known)
-    # best_tuned_model = DecisionTreeClassifier(
-    #     random_state=42,
-    #     max_depth=<your_colab_max_depth>,
-    #     min_samples_split=<your_colab_min_samples_split>,
-    #     min_samples_leaf=<your_colab_min_samples_leaf>,
-    #     criterion=<your_colab_criterion>,
-    #     max_features=<your_colab_max_features>,
-    #     splitter=<your_colab_splitter>,
-    #     min_impurity_decrease=<your_colab_min_impurity_decrease>,
-    #     ccp_alpha=<your_colab_ccp_alpha>
-    # )
-
-    # Alternative: Use GridSearchCV (uncomment to try)
-    # from sklearn.model_selection import GridSearchCV
-    # param_grid = {
-    #     'max_depth': [5, 7, 10, 15],
-    #     'min_samples_split': [2, 5, 10],
-    #     'min_samples_leaf': [1, 2, 4],
-    #     'criterion': ['gini', 'entropy']
-    # }
-    # grid_search = GridSearchCV(base_dt, param_grid, cv=5, scoring='accuracy', n_jobs=-1)
-    # grid_search.fit(X_train, y_train)
-    # best_tuned_model = grid_search.best_estimator_
-
     # Define models
+    st.subheader("Model Definitions")
+    initial_model = DecisionTreeClassifier(
+        random_state=42, max_depth=10, min_samples_split=5,
+        min_samples_leaf=2, criterion='gini'
+    )
+    # Hardcode Tuned Decision Tree parameters from Colab
+    tuned_model = DecisionTreeClassifier(
+        random_state=42,
+        splitter='best',
+        min_samples_split=30,
+        min_samples_leaf=10,
+        min_impurity_decrease=0.001,
+        max_features=0.5,
+        max_depth=3,
+        criterion='entropy',
+        ccp_alpha=0.01
+    )
+
+    st.write("#### Tuned Decision Tree Parameters (Hardcoded from Colab):")
+    st.write("- splitter: best")
+    st.write("- min_samples_split: 30")
+    st.write("- min_samples_leaf: 10")
+    st.write("- min_impurity_decrease: 0.001")
+    st.write("- max_features: 0.5")
+    st.write("- max_depth: 3")
+    st.write("- criterion: entropy")
+    st.write("- ccp_alpha: 0.01")
+
     models = {
-        'Initial Decision Tree': DecisionTreeClassifier(
-            random_state=42, max_depth=10, min_samples_split=5,
-            min_samples_leaf=2, criterion='gini'
-        ),
-        'Tuned Decision Tree': best_tuned_model
+        'Initial Decision Tree': initial_model,
+        'Tuned Decision Tree': tuned_model
     }
 
     # Train and evaluate models
@@ -177,21 +143,33 @@ if df is not None:
         st.write(f"Raw Tuned Test Accuracy: {tuned_test_acc}")
         if abs(tuned_test_acc - initial_test_acc) < 1e-6:
             st.warning("The Initial and Tuned Decision Tree models have identical test accuracies. "
-                       "Possible reasons: hyperparameters not optimal, dataset differences, or limited search. "
-                       "Expected Tuned Test Accuracy ~0.9067 from Colab.")
+                       "This is unexpected since Colab shows Tuned Test Accuracy ~0.9067. "
+                       "Possible reasons: dataset differences, preprocessing issues, or split inconsistencies.")
         elif tuned_test_acc > initial_test_acc and abs(tuned_test_acc - 0.9067) < 0.01:
             st.success("Tuned Decision Tree has higher test accuracy (~0.9067), matching Colab results.")
+            if abs(model_results['Tuned Decision Tree']['train_acc'] - 0.8884) > 0.01 or \
+               abs(model_results['Tuned Decision Tree']['val_acc'] - 0.9333) > 0.01:
+                st.warning("Tuned model test accuracy matches Colab, but training or validation accuracies differ. "
+                           "Check dataset or preprocessing.")
         else:
             st.error("Unexpected: Tuned Decision Tree test accuracy does not match Colab (0.9067). "
-                     "Check parameters, dataset, or preprocessing.")
+                     "Check dataset consistency, preprocessing, or library versions.")
 
     except KeyError as e:
         st.error(f"Error accessing model results: {e}. Please ensure models are trained correctly.")
 
-    # Display tuned model parameters for comparison
+    # Parameter comparison
     st.write("#### Parameter Comparison")
     st.write(f"Initial Decision Tree Parameters: max_depth=10, min_samples_split=5, min_samples_leaf=2, criterion='gini'")
-    st.write(f"Tuned Decision Tree Parameters: {random_search.best_params_}")
+    st.write("Tuned Decision Tree Parameters (from Colab):")
+    st.write("- splitter: best")
+    st.write("- min_samples_split: 30")
+    st.write("- min_samples_leaf: 10")
+    st.write("- min_impurity_decrease: 0.001")
+    st.write("- max_features: 0.5")
+    st.write("- max_depth: 3")
+    st.write("- criterion: entropy")
+    st.write("- ccp_alpha: 0.01")
 
     # Bar chart for test accuracy comparison
     st.write("#### Test Accuracy Visualization")
