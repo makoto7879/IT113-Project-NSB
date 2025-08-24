@@ -68,20 +68,7 @@ if df is not None:
     # Add this right after training your model, before the user input section
     st.write("=== DEBUG SECTION ===")
     st.write("Testing model on first training example:")
-
-    # Take first row from training data
-    test_row = X_train.iloc[0:1]  
-    expected = y_train[0]
-    predicted = dt_classifier.predict(test_row)[0]
-
-    st.write(f"Expected: {expected} ({le.inverse_transform([expected])[0]})")
-    st.write(f"Predicted: {predicted} ({le.inverse_transform([predicted])[0]})")
-    st.write(f"Match: {expected == predicted}")
-
-    # Show the actual feature values
-    st.write("Training data features (log-transformed):")
-    st.write(test_row)
-    
+        
     # Interactive user input for prediction
     st.header("Predict Sleep Disorder")
 
@@ -102,8 +89,8 @@ if df is not None:
     # Define categorical columns that are not log-transformed
     categorical_cols = ['Gender_Numeric', 'BMI_category_numeric', 'Occupation_Numeric']
 
-    user_input = {}
-    for col in X.columns:
+   user_input = {}
+    for col in X_original.columns:  # Use original column order
         if col == "Gender_Numeric":
             user_input[col] = st.radio(
                 "Gender", 
@@ -122,7 +109,7 @@ if df is not None:
                 options=list(occupation_options.keys()),
                 format_func=lambda x: occupation_options[x]
             )
-         elif col == "Sleep Duration" and np.issubdtype(X_original[col].dtype, np.number):
+        elif col == "Sleep Duration" and np.issubdtype(X_original[col].dtype, np.number):
             # Special handling for Sleep Duration - allow 1 decimal place
             original_max = float(np.expm1(X_original[col].max()))
             original_mean = float(np.expm1(X_original[col].mean()))
@@ -149,18 +136,22 @@ if df is not None:
         else:
             user_input[col] = st.selectbox(f"{col}", sorted(X_original[col].unique()))
 
-
     if st.button("Predict Sleep Disorder"):
-        input_df = pd.DataFrame([user_input])
-        # Apply log transformation to numerical columns
+        # Create DataFrame with same column order as training
+        input_df = pd.DataFrame([user_input])[X_original.columns]
+        
+        # Transform user input to log scale (since model expects log-transformed data)
         for col in input_df.columns:
             if col not in categorical_cols and np.issubdtype(input_df[col].dtype, np.number):
-                input_df[col] = np.log1p(input_df[col])  # log(x + 1) transformation
+                input_df[col] = np.log1p(input_df[col])  # Transform user input to log scale
             if not np.issubdtype(input_df[col].dtype, np.number):
-                input_df[col] = input_df[col].astype(df[col].dtype)
+                input_df[col] = input_df[col].astype(X_original[col].dtype)
+        
         try:
             pred = dt_classifier.predict(input_df)[0]
-            st.success(f"Predicted Sleep Disorder: {le.inverse_transform([pred])[0]}")
+            pred_label = le.inverse_transform([pred])[0]
+            st.success(f"Predicted Sleep Disorder: {pred_label}")
+                    
         except Exception as e:
             st.error(f"Prediction error: {e}")
 
