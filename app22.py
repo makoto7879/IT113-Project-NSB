@@ -161,7 +161,13 @@ if uploaded_file:
 
     user_input = {}
     for col in X.columns:
-        if np.issubdtype(df[col].dtype, np.number):
+        if col == "Gender_Numeric":
+            user_input[col] = st.radio(
+                "Gender_Numeric (0 = Male, 1 = Female)", 
+                options=[1, 0], 
+                format_func=lambda x: "Male" if x == 1 else "Female"
+            )
+        elif np.issubdtype(df[col].dtype, np.number):
             user_input[col] = st.number_input(
                 f"{col}", 
                 float(df[col].min()), float(df[col].max()), float(df[col].mean())
