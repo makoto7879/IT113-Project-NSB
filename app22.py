@@ -159,6 +159,20 @@ if uploaded_file:
     st.header("Predict Sleep Disorder for New User")
     st.write("Input values for each feature below and click 'Predict Sleep Disorder'.")
 
+        occupation_options = {
+        0: "Software Engineer",
+        1: "Doctor",
+        2: "Sales Representative",
+        3: "Teacher",
+        4: "Nurse",
+        5: "Engineer",
+        6: "Accountant",
+        7: "Scientist",
+        8: "Lawyer",
+        9: "Salesperson",
+        10: "Manager"
+    }
+
     user_input = {}
     for col in X.columns:
         if col == "Gender_Numeric":
@@ -167,11 +181,17 @@ if uploaded_file:
                 options=[1, 0], 
                 format_func=lambda x: "Male" if x == 1 else "Female"
             )
-        elif col == "BMI_category_numeric":
+        elif col == "Weight_Category_Numeric":
             user_input[col] = st.radio(
-                "BMI_category_numeric (0 = Normal Weight, 1 = Overweight, 2 = Obese)",
+                "Weight_Category_Numeric (0 = Normal Weight, 1 = Overweight, 2 = Obese)",
                 options=[0, 1, 2],
                 format_func=lambda x: {0: "Normal Weight", 1: "Overweight", 2: "Obese"}[x]
+            )
+        elif col == "Occupation_Numeric":
+            user_input[col] = st.radio(
+                "Occupation_Numeric",
+                options=list(occupation_options.keys()),
+                format_func=lambda x: occupation_options[x]
             )
         elif np.issubdtype(df[col].dtype, np.number):
             user_input[col] = st.number_input(
