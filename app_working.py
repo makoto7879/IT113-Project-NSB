@@ -122,18 +122,33 @@ if df is not None:
                 options=list(occupation_options.keys()),
                 format_func=lambda x: occupation_options[x]
             )
-        elif np.issubdtype(df[col].dtype, np.number):
-            # Enforce integer input for numerical columns
+         elif col == "Sleep Duration" and np.issubdtype(X_original[col].dtype, np.number):
+            # Special handling for Sleep Duration - allow 1 decimal place
+            original_max = float(np.expm1(X_original[col].max()))
+            original_mean = float(np.expm1(X_original[col].mean()))
             user_input[col] = st.number_input(
                 f"{col}",
-                min_value=0,  # Ensure non-negative for log(x + 1)
-                max_value=int(np.expm1(df[col].max())),  # Inverse of log-transform, cast to int
-                value=int(np.expm1(df[col].mean())),  # Inverse of log-transform, cast to int
-                step=1,  # Enforce whole numbers
-                format="%d"  # Display as integer, no decimals
+                min_value=0.0,
+                max_value=original_max,
+                value=original_mean,
+                step=0.1,  # Allow 0.1 increments
+                format="%.1f"  # Show 1 decimal place
+            )
+        elif np.issubdtype(X_original[col].dtype, np.number):
+            # Your CSV is already log-transformed, so convert back to original scale for user input
+            original_max = int(np.expm1(X_original[col].max()))  # Convert from log scale
+            original_mean = int(np.expm1(X_original[col].mean()))  # Convert from log scale
+            user_input[col] = st.number_input(
+                f"{col}",
+                min_value=0,
+                max_value=original_max,  # Now shows realistic numbers
+                value=original_mean,     # Now shows realistic numbers
+                step=1,
+                format="%d"
             )
         else:
-            user_input[col] = st.selectbox(f"{col}", sorted(df[col].unique()))
+            user_input[col] = st.selectbox(f"{col}", sorted(X_original[col].unique()))
+
 
     if st.button("Predict Sleep Disorder"):
         input_df = pd.DataFrame([user_input])
