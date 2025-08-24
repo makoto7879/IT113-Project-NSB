@@ -98,13 +98,11 @@ if df is not None:
         train_acc = accuracy_score(y_train, train_pred)
         test_acc = accuracy_score(y_test, test_pred)
         val_acc = accuracy_score(y_val, val_pred)
-        overfitting = train_acc - val_acc
-
+       
         model_results[name] = {
             'train_acc': train_acc,
             'test_acc': test_acc,
             'val_acc': val_acc,
-            'overfitting': overfitting,
             'model': model
         }
 
@@ -114,7 +112,6 @@ if df is not None:
         "Train Accuracy": {k: v['train_acc'] for k, v in model_results.items()},
         "Test Accuracy": {k: v['test_acc'] for k, v in model_results.items()},
         "Validation Accuracy": {k: v['val_acc'] for k, v in model_results.items()},
-        "Overfitting Metric": {k: v['overfitting'] for k, v in model_results.items()}
     })
 
     # Display the comparison table with test accuracy highlighted
@@ -128,22 +125,6 @@ if df is not None:
     st.write(f"- **Initial Decision Tree**: Test Accuracy = {initial_test_acc:.4f}")
     st.write(f"- **Tuned Decision Tree**: Test Accuracy = {tuned_test_acc:.4f}")
     st.write(f"Difference (Tuned - Initial): {tuned_test_acc - initial_test_acc:.4f}")
-
-    # Bar chart for test accuracy comparison
-    st.write("#### Test Accuracy Visualization")
-    fig, ax = plt.subplots(figsize=(8, 4))
-    models_names = ['Initial Decision Tree', 'Tuned Decision Tree']
-    test_accuracies = [initial_test_acc, tuned_test_acc]
-    bars = ax.bar(models_names, test_accuracies, color=['#1f77b4', '#ff7f0e'])
-    ax.set_title('Test Accuracy Comparison')
-    ax.set_ylabel('Accuracy')
-    ax.set_ylim(0, 1)
-    # Add value labels on top of bars
-    for bar in bars:
-        yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, f'{yval:.4f}', ha='center', va='bottom')
-    plt.tight_layout()
-    st.pyplot(fig)
 
     # Select the best model based on test accuracy
     best_test_model_name = max(model_results.keys(), key=lambda x: model_results[x]['test_acc'])
