@@ -12,8 +12,10 @@ from sklearn import tree
 import warnings
 warnings.filterwarnings('ignore')
 
+# App title
 st.title("Sleep Disorder Decision Tree Analysis (Interactive User Input)")
 
+# Sidebar for data loading
 st.sidebar.header("Load cleaned_data_v2.csv")
 csv_path = "cleaned_data_v2.csv"
 df = None
@@ -30,6 +32,7 @@ else:
         st.success("Loaded your uploaded file!")
         st.write("### Data Sample", df.head())
 
+# Data processing and model training
 if df is not None:
     target_col = 'Sleep Disorder'
     X = df.drop(target_col, axis=1)
@@ -81,6 +84,7 @@ if df is not None:
 
     best_tuned_model = random_search.best_estimator_
 
+    # Define models
     models = {
         'Initial Decision Tree': DecisionTreeClassifier(
             random_state=42, max_depth=10, min_samples_split=5,
@@ -89,6 +93,7 @@ if df is not None:
         'Tuned Decision Tree': best_tuned_model
     }
 
+    # Train and evaluate models
     model_results = {}
     for name, model in models.items():
         model.fit(X_train, y_train)
@@ -106,19 +111,18 @@ if df is not None:
             'model': model
         }
 
+    # Model comparison
     st.subheader("Model Comparison")
-    # Create a DataFrame for model comparison
     model_comp = pd.DataFrame({
         "Train Accuracy": {k: v['train_acc'] for k, v in model_results.items()},
         "Test Accuracy": {k: v['test_acc'] for k, v in model_results.items()},
         "Validation Accuracy": {k: v['val_acc'] for k, v in model_results.items()}
     })
 
-    # Display the comparison table with test accuracy highlighted
     st.write("#### Model Performance Metrics")
     st.dataframe(model_comp.style.format("{:.4f}").highlight_max(subset=['Test Accuracy'], color='lightgreen'))
 
-    # Explicitly compare test accuracies
+    # Test accuracy comparison
     st.write("#### Test Accuracy Comparison")
     try:
         initial_test_acc = model_results['Initial Decision Tree']['test_acc']
@@ -148,7 +152,6 @@ if df is not None:
     ax.set_title('Test Accuracy Comparison')
     ax.set_ylabel('Accuracy')
     ax.set_ylim(0, 1)
-    # Add value labels on top of bars
     for bar in bars:
         yval = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2, yval + 0.01, f'{yval:.4f}', ha='center', va='bottom')
@@ -160,6 +163,7 @@ if df is not None:
     best_final_model = model_results[best_test_model_name]['model']
     st.success(f"Best model based on test accuracy: **{best_test_model_name}** (Test Accuracy: {model_results[best_test_model_name]['test_acc']:.4f})")
 
+    # Evaluate the best model
     dt_classifier = best_final_model
     y_train_pred = dt_classifier.predict(X_train)
     y_test_pred = dt_classifier.predict(X_test)
@@ -176,6 +180,7 @@ if df is not None:
     st.markdown("**Classification Report (Validation Set):**")
     st.text(classification_report(y_val, y_val_pred, target_names=le.classes_))
 
+    # Confusion matrices
     st.subheader("Confusion Matrices")
     cm_test = confusion_matrix(y_test, y_test_pred)
     cm_val = confusion_matrix(y_val, y_val_pred)
@@ -193,6 +198,7 @@ if df is not None:
     plt.tight_layout()
     st.pyplot(fig)
 
+    # Decision tree visualization
     st.subheader("Decision Tree Visualization (First 3 Levels)")
     fig2 = plt.figure(figsize=(20, 10))
     tree.plot_tree(dt_classifier,
@@ -205,7 +211,7 @@ if df is not None:
     plt.tight_layout()
     st.pyplot(fig2)
 
-    # Interactive User Input for Prediction
+    # Interactive user input for prediction
     st.header("Predict Sleep Disorder for New User")
     st.write("Input values for each feature below and click 'Predict Sleep Disorder'.")
 
