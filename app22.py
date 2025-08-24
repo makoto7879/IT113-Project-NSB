@@ -13,12 +13,17 @@ warnings.filterwarnings('ignore')
 
 st.title("Sleep Disorder Decision Tree Analysis (Interactive User Input)")
 
-st.sidebar.header("Upload cleaned_data_v2.csv")
-uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+try:
+    df = pd.read_csv(csv_path)
+    st.success(f"Loaded {csv_path} from repository!")
     st.write("### Data Sample", df.head())
+except FileNotFoundError:
+    st.error(f"File {csv_path} not found in repository. Please upload it manually.")
+    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+        st.success("Loaded your uploaded file!")
+        st.write("### Data Sample", df.head())
 
     target_col = 'Sleep Disorder'
     X = df.drop(target_col, axis=1)
