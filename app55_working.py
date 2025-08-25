@@ -98,7 +98,7 @@ if df is not None:
             user_input[col] = st.radio(
                 "Gender", 
                 options=[1, 0], 
-                format_func=lambda x: "Male" if x == 1 else "Female"
+                format_func=lambda x: "Female" if x == 1 else "Male"
             )
         elif col == "BMI_category_numeric":
             user_input[col] = st.radio(
